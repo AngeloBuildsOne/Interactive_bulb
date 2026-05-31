@@ -1,0 +1,521 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Interactive Light Bulb</title>
+  <meta name="description" content="A fun interactive cartoon light bulb with on/dim/off switch, built with CSS art.">
+  <meta name="author" content="Angelo Limbaring">
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      transition: background-color 0.7s;
+      overflow-x: hidden;
+    }
+    body.off { background-color: #1a1a2e; }
+    body.dim { background-color: #2d2a3e; }
+    body.on { background-color: #FFF8E1; }
+
+    /* Stars */
+    .stars { position: fixed; inset: 0; overflow: hidden; pointer-events: none; transition: opacity 0.7s; }
+    .star {
+      position: absolute; border-radius: 50%; background: white;
+      animation: twinkle var(--duration) ease-in-out infinite;
+      animation-delay: var(--delay);
+    }
+    @keyframes twinkle {
+      0%, 100% { opacity: 0.3; }
+      50% { opacity: 1; }
+    }
+    body.on .stars { opacity: 0; }
+
+    /* Light glow */
+    .light-glow {
+      position: fixed; top: 33%; left: 50%; transform: translate(-50%, -50%);
+      width: 600px; height: 600px; border-radius: 50%; pointer-events: none;
+      transition: opacity 0.7s;
+    }
+    body.on .light-glow {
+      background: radial-gradient(circle, rgba(255,235,59,0.3) 0%, rgba(255,235,59,0.1) 30%, transparent 70%);
+      animation: pulse-glow 2s ease-in-out infinite;
+      opacity: 1;
+    }
+    body.dim .light-glow {
+      background: radial-gradient(circle, rgba(255,200,50,0.12) 0%, rgba(255,200,50,0.04) 30%, transparent 70%);
+      animation: pulse-glow-dim 3s ease-in-out infinite;
+      opacity: 1;
+    }
+    body.off .light-glow { opacity: 0; }
+    @keyframes pulse-glow {
+      0%, 100% { transform: translate(-50%, -50%) scale(1); opacity: 0.8; }
+      50% { transform: translate(-50%, -50%) scale(1.05); opacity: 1; }
+    }
+    @keyframes pulse-glow-dim {
+      0%, 100% { transform: translate(-50%, -50%) scale(0.95); opacity: 0.5; }
+      50% { transform: translate(-50%, -50%) scale(1); opacity: 0.7; }
+    }
+
+    /* About button */
+    .about-btn {
+      position: fixed; top: 20px; right: 20px; z-index: 100;
+      display: flex; align-items: center; gap: 8px;
+      padding: 8px 16px; border-radius: 20px;
+      font-weight: 600; font-size: 14px; cursor: pointer;
+      transition: all 0.3s;
+      border: 1px solid rgba(255,255,255,0.15);
+      backdrop-filter: blur(10px);
+    }
+    body.on .about-btn { background: rgba(255,143,0,0.15); color: #E65100; border-color: rgba(255,143,0,0.3); }
+    body.dim .about-btn { background: rgba(255,180,0,0.1); color: #FFB74D; border-color: rgba(255,180,0,0.2); }
+    body.off .about-btn { background: rgba(255,255,255,0.08); color: #E0E0E0; border-color: rgba(255,255,255,0.15); }
+
+    /* Main content */
+    .main {
+      flex: 1; display: flex; flex-direction: column;
+      align-items: center; justify-content: center;
+      padding: 48px 16px 32px; position: relative; z-index: 10;
+    }
+
+    /* Title */
+    .title {
+      font-size: clamp(32px, 8vw, 52px); font-weight: bold; margin-bottom: 32px;
+      transition: all 0.7s; text-align: center;
+    }
+    body.on .title { color: #F57F17; text-shadow: 0 0 20px rgba(255,193,7,0.5); }
+    body.dim .title { color: #FFB74D; text-shadow: 0 0 15px rgba(255,183,77,0.3); }
+    body.off .title { color: #E0E0E0; text-shadow: 0 0 10px rgba(224,224,224,0.3); }
+
+    /* Bulb container */
+    .bulb-container { position: relative; width: 220px; height: 320px; }
+
+    /* Wire */
+    .wire {
+      position: absolute; left: 50%; transform: translateX(-50%);
+      width: 3px; height: 40px; transition: background-color 0.5s;
+    }
+    body.on .wire { background: #9E9E9E; }
+    body.dim .wire { background: #777; }
+    body.off .wire { background: #555; }
+
+    /* Bulb glass */
+    .bulb-glass {
+      position: absolute; left: 50%; transform: translateX(-50%);
+      width: 160px; height: 160px; border-radius: 50% 50% 35% 35%; top: 35px;
+      transition: all 0.5s;
+    }
+    body.on .bulb-glass {
+      background: radial-gradient(circle at 40% 35%, #FFF9C4, #FFEE58 40%, #FFD600 80%);
+      box-shadow: 0 0 40px rgba(255,235,59,0.8), 0 0 80px rgba(255,235,59,0.4), 0 0 120px rgba(255,235,59,0.2), inset 0 0 30px rgba(255,255,255,0.5);
+      animation: bulb-glow 3s ease-in-out infinite;
+    }
+    body.dim .bulb-glass {
+      background: radial-gradient(circle at 40% 35%, #FFF3C4, #FFE082 40%, #FFB300 80%);
+      box-shadow: 0 0 20px rgba(255,179,0,0.5), 0 0 50px rgba(255,179,0,0.2), 0 0 80px rgba(255,179,0,0.1), inset 0 0 15px rgba(255,255,255,0.3);
+      animation: bulb-glow-dim 3s ease-in-out infinite;
+    }
+    body.off .bulb-glass {
+      background: radial-gradient(circle at 40% 35%, #4a4a5a, #333344 50%, #2a2a3a 80%);
+      box-shadow: inset 0 0 20px rgba(0,0,0,0.3), 0 2px 10px rgba(0,0,0,0.3);
+    }
+    @keyframes bulb-glow {
+      0%, 100% { box-shadow: 0 0 40px rgba(255,235,59,0.8), 0 0 80px rgba(255,235,59,0.4), 0 0 120px rgba(255,235,59,0.2), inset 0 0 30px rgba(255,255,255,0.5); }
+      50% { box-shadow: 0 0 50px rgba(255,235,59,0.9), 0 0 100px rgba(255,235,59,0.5), 0 0 150px rgba(255,235,59,0.3), inset 0 0 40px rgba(255,255,255,0.6); }
+    }
+    @keyframes bulb-glow-dim {
+      0%, 100% { box-shadow: 0 0 20px rgba(255,179,0,0.5), 0 0 50px rgba(255,179,0,0.2), 0 0 80px rgba(255,179,0,0.1), inset 0 0 15px rgba(255,255,255,0.3); }
+      50% { box-shadow: 0 0 25px rgba(255,179,0,0.6), 0 0 60px rgba(255,179,0,0.25), 0 0 90px rgba(255,179,0,0.12), inset 0 0 20px rgba(255,255,255,0.35); }
+    }
+
+    /* Filament */
+    .filament { position: absolute; left: 50%; transform: translateX(-50%); top: 60%; }
+    .filament path { transition: all 0.5s; }
+    body.on .filament path { stroke: #FF6F00; filter: drop-shadow(0 0 4px #FF6F00); }
+    body.dim .filament path { stroke: #FF8F00; filter: drop-shadow(0 0 2px #FF8F00); }
+    body.off .filament path { stroke: #555; filter: none; }
+
+    /* Shine */
+    .shine {
+      position: absolute; width: 30px; height: 40px; border-radius: 50%;
+      top: 20%; left: 25%; transform: rotate(-20deg); transition: all 0.5s;
+    }
+    body.on .shine { background: radial-gradient(ellipse, rgba(255,255,255,0.9), transparent); }
+    body.dim .shine { background: radial-gradient(ellipse, rgba(255,255,255,0.5), transparent); }
+    body.off .shine { background: radial-gradient(ellipse, rgba(255,255,255,0.15), transparent); }
+
+    /* Bulb neck */
+    .bulb-neck {
+      position: absolute; left: 50%; transform: translateX(-50%);
+      width: 80px; height: 20px; top: 185px; border-radius: 0 0 4px 4px; transition: all 0.5s;
+    }
+    body.on .bulb-neck { background: linear-gradient(to bottom, #FFD600, #F9A825); box-shadow: 0 0 15px rgba(255,235,59,0.3); }
+    body.dim .bulb-neck { background: linear-gradient(to bottom, #FFB300, #E68A00); box-shadow: 0 0 8px rgba(255,179,0,0.15); }
+    body.off .bulb-neck { background: linear-gradient(to bottom, #333344, #2a2a3a); box-shadow: none; }
+
+    /* Screw base */
+    .screw-base { position: absolute; left: 50%; transform: translateX(-50%); top: 205px; }
+    .screw-row { transition: all 0.5s; height: 12px; }
+    .screw-row.even { width: 80px; }
+    .screw-row.odd { width: 72px; margin-left: 4px; }
+    body.on .screw-row.even { background: #B0BEC5; border: 1px solid #78909C; }
+    body.on .screw-row.odd { background: #90A4AE; border: 1px solid #78909C; }
+    body.dim .screw-row.even { background: #8D99A5; border: 1px solid #607080; }
+    body.dim .screw-row.odd { background: #7A8894; border: 1px solid #607080; }
+    body.off .screw-row.even { background: #555; border: 1px solid #333; }
+    body.off .screw-row.odd { background: #444; border: 1px solid #333; }
+    .screw-row:last-child { border-radius: 0 0 6px 6px; }
+
+    /* Tip */
+    .tip {
+      position: absolute; left: 50%; transform: translateX(-50%);
+      width: 20px; height: 12px; top: 257px; border-radius: 0 0 50% 50%; transition: all 0.5s;
+    }
+    body.on .tip { background: #78909C; }
+    body.dim .tip { background: #607080; }
+    body.off .tip { background: #444; }
+
+    /* Switch section */
+    .switch-section {
+      z-index: 10; margin-top: 48px;
+      display: flex; flex-direction: column; align-items: center; gap: 16px;
+    }
+    .switch-label { font-size: 18px; font-weight: 500; transition: color 0.7s; letter-spacing: 1px; }
+    body.on .switch-label { color: #F57F17; }
+    body.dim .switch-label { color: #FFB74D; }
+    body.off .switch-label { color: #9E9E9E; }
+
+    /* 3-way switch */
+    .switch-container {
+      display: flex; border-radius: 24px; overflow: hidden;
+      transition: box-shadow 0.4s;
+    }
+    body.on .switch-container { box-shadow: 0 0 15px rgba(255,214,0,0.5), 0 2px 8px rgba(0,0,0,0.2); }
+    body.dim .switch-container { box-shadow: 0 0 10px rgba(255,179,0,0.3), 0 2px 8px rgba(0,0,0,0.2); }
+    body.off .switch-container { box-shadow: 0 2px 8px rgba(0,0,0,0.3), inset 0 1px 3px rgba(0,0,0,0.4); }
+
+    .switch-btn {
+      padding: 12px 22px; border: none; cursor: pointer;
+      font-weight: 600; font-size: 14px; letter-spacing: 0.5px;
+      transition: all 0.3s; position: relative;
+    }
+    .switch-btn.off-btn { border-radius: 24px 0 0 24px; }
+    .switch-btn.dim-btn { border-radius: 0; }
+    .switch-btn.on-btn { border-radius: 0 24px 24px 0; }
+
+    /* Off button */
+    body.off .switch-btn.off-btn { background: #666; color: #FFF; }
+    body.dim .switch-btn.off-btn, body.on .switch-btn.off-btn { background: #333; color: #888; }
+
+    /* Dim button */
+    body.dim .switch-btn.dim-btn { background: #FF9800; color: #FFF; }
+    body.off .switch-btn.dim-btn, body.on .switch-btn.dim-btn { background: #444; color: #888; }
+
+    /* On button */
+    body.on .switch-btn.on-btn { background: #FFD600; color: #333; }
+    body.off .switch-btn.on-btn, body.dim .switch-btn.on-btn { background: #333; color: #888; }
+
+    .switch-btn:hover { filter: brightness(1.15); }
+    .switch-btn:active { transform: scale(0.97); }
+
+    .switch-emoji { font-size: 18px; margin-right: 4px; vertical-align: middle; }
+
+    .hint { font-size: 14px; margin-top: 8px; animation: bounce 2s infinite; transition: color 0.7s; }
+    body.on .hint { color: rgba(245,127,23,0.6); }
+    body.dim .hint { color: rgba(255,183,77,0.5); }
+    body.off .hint { color: rgba(158,158,158,0.5); }
+    @keyframes bounce { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-5px); } }
+
+    /* Footer */
+    .footer {
+      position: relative; z-index: 10; margin-top: auto;
+      padding: 24px 0; text-align: center; font-size: 14px; transition: color 0.7s;
+    }
+    body.on .footer { color: rgba(230,81,0,0.5); }
+    body.dim .footer { color: rgba(255,183,77,0.4); }
+    body.off .footer { color: rgba(158,158,158,0.4); }
+
+    /* Modal */
+    .modal-overlay {
+      position: fixed; inset: 0; z-index: 200;
+      display: flex; align-items: center; justify-content: center; padding: 16px;
+      opacity: 0; pointer-events: none; transition: opacity 0.3s;
+    }
+    .modal-overlay.active { opacity: 1; pointer-events: auto; }
+    .modal-backdrop { position: absolute; inset: 0; background: rgba(0,0,0,0.6); backdrop-filter: blur(6px); }
+    .modal-content {
+      position: relative; width: 100%; max-width: 480px; max-height: 85vh;
+      overflow-y: auto; border-radius: 16px; padding: 32px;
+      transition: all 0.3s;
+    }
+    body.on .modal-content { background: #FFFDE7; border: 1px solid rgba(255,193,7,0.4); box-shadow: 0 8px 40px rgba(255,193,7,0.25); }
+    body.dim .modal-content { background: #2d2a3e; border: 1px solid rgba(255,179,0,0.25); box-shadow: 0 8px 40px rgba(255,179,0,0.15); }
+    body.off .modal-content { background: #1e1e38; border: 1px solid rgba(255,255,255,0.12); box-shadow: 0 8px 40px rgba(0,0,0,0.5); }
+    .modal-overlay:not(.active) .modal-content { transform: scale(0.95) translateY(20px); }
+    .modal-overlay.active .modal-content { transform: scale(1) translateY(0); }
+
+    .modal-close {
+      position: absolute; top: 16px; right: 16px; width: 32px; height: 32px;
+      border-radius: 50%; display: flex; align-items: center; justify-content: center;
+      cursor: pointer; border: none; font-size: 18px; transition: all 0.2s;
+    }
+    body.on .modal-close { background: rgba(255,143,0,0.15); color: #E65100; }
+    body.dim .modal-close { background: rgba(255,179,0,0.15); color: #FFB74D; }
+    body.off .modal-close { background: rgba(255,255,255,0.08); color: #9E9E9E; }
+
+    .modal-title { font-size: 24px; font-weight: bold; margin-bottom: 20px; padding-right: 32px; }
+    body.on .modal-title { color: #E65100; }
+    body.dim .modal-title { color: #FFB74D; }
+    body.off .modal-title { color: #E0E0E0; }
+
+    .creator-card { border-radius: 12px; padding: 20px; margin-bottom: 24px; }
+    body.on .creator-card { background: rgba(255,255,255,0.7); border: 1px solid rgba(255,193,7,0.2); }
+    body.dim .creator-card { background: rgba(255,255,255,0.05); border: 1px solid rgba(255,179,0,0.15); }
+    body.off .creator-card { background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.06); }
+
+    .creator-info { display: flex; align-items: center; gap: 16px; }
+    .avatar {
+      flex-shrink: 0; width: 64px; height: 64px; border-radius: 50%;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 24px; font-weight: bold;
+    }
+    body.on .avatar { background: linear-gradient(135deg, #FFD600, #FF8F00); color: #FFF; box-shadow: 0 0 20px rgba(255,214,0,0.4); }
+    body.dim .avatar { background: linear-gradient(135deg, #FFB300, #E68A00); color: #FFF; box-shadow: 0 0 12px rgba(255,179,0,0.3); }
+    body.off .avatar { background: linear-gradient(135deg, #555, #333); color: #DDD; box-shadow: 0 0 10px rgba(0,0,0,0.4); }
+
+    .creator-name { font-size: 18px; font-weight: bold; }
+    body.on .creator-name { color: #BF360C; }
+    body.dim .creator-name { color: #FFB74D; }
+    body.off .creator-name { color: #F5F5F5; }
+    .creator-role { font-size: 14px; font-weight: 500; }
+    body.on .creator-role { color: #F57F17; }
+    body.dim .creator-role { color: #FF9800; }
+    body.off .creator-role { color: #9E9E9E; }
+
+    .creator-desc { font-size: 14px; line-height: 1.6; margin-top: 16px; }
+    body.on .creator-desc { color: #5D4037; }
+    body.dim .creator-desc { color: #BDBDBD; }
+    body.off .creator-desc { color: #BDBDBD; }
+
+    .date-badge {
+      display: inline-flex; align-items: center; gap: 8px; margin-top: 16px;
+      padding: 8px 16px; border-radius: 20px; font-size: 12px; font-weight: 600;
+    }
+    body.on .date-badge { background: rgba(255,143,0,0.15); color: #E65100; border: 1px solid rgba(255,143,0,0.3); }
+    body.dim .date-badge { background: rgba(255,179,0,0.1); color: #FFB74D; border: 1px solid rgba(255,179,0,0.2); }
+    body.off .date-badge { background: rgba(255,255,255,0.08); color: #9E9E9E; border: 1px solid rgba(255,255,255,0.1); }
+
+    .faq-title { font-size: 20px; font-weight: bold; margin-bottom: 16px; }
+    body.on .faq-title { color: #E65100; }
+    body.dim .faq-title { color: #FFB74D; }
+    body.off .faq-title { color: #E0E0E0; }
+
+    .faq-item { border-radius: 12px; overflow: hidden; margin-bottom: 10px; transition: all 0.3s; }
+    body.on .faq-item { background: rgba(255,255,255,0.85); border: 1px solid rgba(255,193,7,0.3); }
+    body.dim .faq-item { background: rgba(255,255,255,0.05); border: 1px solid rgba(255,179,0,0.2); }
+    body.off .faq-item { background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.1); }
+
+    .faq-question {
+      width: 100%; text-align: left; padding: 16px 20px;
+      display: flex; align-items: center; justify-content: space-between;
+      background: none; border: none; cursor: pointer; font-size: 15px; font-weight: 600;
+    }
+    body.on .faq-question { color: #E65100; }
+    body.dim .faq-question { color: #FFB74D; }
+    body.off .faq-question { color: #E0E0E0; }
+
+    .faq-icon { font-size: 20px; transition: transform 0.3s; flex-shrink: 0; }
+    body.on .faq-icon { color: #FF8F00; }
+    body.dim .faq-icon { color: #FF9800; }
+    body.off .faq-icon { color: #9E9E9E; }
+    .faq-item.open .faq-icon { transform: rotate(45deg); }
+
+    .faq-answer { max-height: 0; opacity: 0; overflow: hidden; transition: all 0.3s; padding: 0 20px; }
+    .faq-item.open .faq-answer { max-height: 300px; opacity: 1; padding: 0 20px 16px; }
+    .faq-answer p { font-size: 14px; line-height: 1.6; }
+    body.on .faq-answer p { color: #5D4037; }
+    body.dim .faq-answer p { color: #BDBDBD; }
+    body.off .faq-answer p { color: #BDBDBD; }
+
+    /* Responsive */
+    @media (max-width: 480px) {
+      .bulb-container { transform: scale(0.85); }
+      .switch-btn { padding: 12px 16px; font-size: 13px; }
+    }
+  </style>
+</head>
+<body class="off">
+
+  <!-- Stars -->
+  <div class="stars" id="stars"></div>
+
+  <!-- Light glow -->
+  <div class="light-glow" id="lightGlow"></div>
+
+  <!-- About button -->
+  <button class="about-btn" onclick="toggleModal(true)">
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+      <circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/>
+    </svg>
+    About
+  </button>
+
+  <!-- Main content -->
+  <div class="main">
+    <h1 class="title" id="title">Lights Off</h1>
+
+    <div class="bulb-container">
+      <div class="wire"></div>
+      <div class="bulb-glass">
+        <div class="filament">
+          <svg viewBox="0 0 30 30" width="30" height="30">
+            <path d="M8 28 Q8 15 12 10 Q15 6 15 2" stroke-width="2" fill="none"/>
+            <path d="M22 28 Q22 15 18 10 Q15 6 15 2" stroke-width="2" fill="none"/>
+          </svg>
+        </div>
+        <div class="shine"></div>
+      </div>
+      <div class="bulb-neck"></div>
+      <div class="screw-base">
+        <div class="screw-row even"></div>
+        <div class="screw-row odd"></div>
+        <div class="screw-row even"></div>
+        <div class="screw-row odd"></div>
+      </div>
+      <div class="tip"></div>
+    </div>
+
+    <div class="switch-section">
+      <p class="switch-label" id="switchLabel">OFF</p>
+
+      <!-- 3-way switch -->
+      <div class="switch-container">
+        <button class="switch-btn off-btn" onclick="setLight('off')" aria-label="Turn off">
+          <span class="switch-emoji">😴</span> OFF
+        </button>
+        <button class="switch-btn dim-btn" onclick="setLight('dim')" aria-label="Dim light">
+          <span class="switch-emoji">😐</span> DIM
+        </button>
+        <button class="switch-btn on-btn" onclick="setLight('on')" aria-label="Turn on">
+          <span class="switch-emoji">😄</span> ON
+        </button>
+      </div>
+
+      <p class="hint">Select a light mode</p>
+    </div>
+  </div>
+
+  <footer class="footer">Made with CSS & HTML by Angelo Limbaring</footer>
+
+  <!-- About Modal -->
+  <div class="modal-overlay" id="modal">
+    <div class="modal-backdrop" onclick="toggleModal(false)"></div>
+    <div class="modal-content">
+      <button class="modal-close" onclick="toggleModal(false)">✕</button>
+
+      <h2 class="modal-title">About</h2>
+
+      <div class="creator-card">
+        <div class="creator-info">
+          <div class="avatar">AL</div>
+          <div>
+            <div class="creator-name">Angelo Limbaring</div>
+            <div class="creator-role">Creator & Developer</div>
+          </div>
+        </div>
+        <p class="creator-desc">This interactive cartoon light bulb was created by Angelo Limbaring as a fun demonstration of CSS art and interactive web design. The entire bulb is rendered purely with CSS, no images required. Now with three modes — ON, DIM, and OFF — you can control the perfect amount of light!</p>
+        <div class="date-badge">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/>
+          </svg>
+          Created on May 27, 2026
+        </div>
+      </div>
+
+      <h2 class="faq-title">Frequently Asked Questions</h2>
+      <div id="faqList"></div>
+    </div>
+  </div>
+
+  <script>
+    let currentMode = 'off';
+
+    // Generate stars
+    const starsEl = document.getElementById('stars');
+    for (let i = 0; i < 30; i++) {
+      const star = document.createElement('div');
+      star.className = 'star';
+      star.style.width = (Math.random() * 3 + 1) + 'px';
+      star.style.height = star.style.width;
+      star.style.top = (Math.random() * 100) + '%';
+      star.style.left = (Math.random() * 100) + '%';
+      star.style.opacity = Math.random() * 0.7 + 0.3;
+      star.style.setProperty('--duration', (Math.random() * 3 + 2) + 's');
+      star.style.setProperty('--delay', (Math.random() * 3) + 's');
+      starsEl.appendChild(star);
+    }
+
+    // FAQ data
+    const faqs = [
+      { q: 'How does the light switch work?', a: 'Click one of the three buttons below the bulb: ON for full brightness, DIM for a cozy glow, or OFF to turn the light off. Each mode changes the bulb appearance, background, and visual effects in real time.' },
+      { q: 'What does the DIM mode do?', a: 'DIM mode gives the bulb a warm, cozy glow — like a nightlight. The background becomes a soft dark purple, the bulb shines at reduced brightness, and the glow effects are gentler. Perfect for a relaxing mood!' },
+      { q: 'Is this a real light bulb?', a: 'No, this is a purely CSS-drawn cartoon light bulb! Every part of it is rendered using CSS gradients, shadows, and animations. No images involved.' },
+      { q: 'What technologies were used to build this?', a: 'This page uses plain HTML, CSS, and JavaScript. No frameworks or libraries needed — just clean, lightweight code.' },
+      { q: 'Why does the background change when I toggle the light?', a: 'The background transitions between a dark starry night (OFF), a soft dark purple (DIM), and a warm amber glow (ON) to simulate the effect of a real light bulb illuminating a room at different brightness levels.' },
+      { q: 'Can I use this on my mobile device?', a: 'Absolutely! The page is fully responsive and works on all screen sizes with touch-friendly controls.' },
+    ];
+
+    // Generate FAQ
+    const faqList = document.getElementById('faqList');
+    faqs.forEach((faq, i) => {
+      const item = document.createElement('div');
+      item.className = 'faq-item';
+      item.innerHTML = `
+        <button class="faq-question" onclick="toggleFaq(${i})">
+          <span>${faq.q}</span>
+          <span class="faq-icon">+</span>
+        </button>
+        <div class="faq-answer"><p>${faq.a}</p></div>
+      `;
+      faqList.appendChild(item);
+    });
+
+    function setLight(mode) {
+      currentMode = mode;
+      document.body.className = mode;
+
+      const title = document.getElementById('title');
+      const label = document.getElementById('switchLabel');
+
+      if (mode === 'on') {
+        title.textContent = "It's Bright!";
+        label.textContent = 'ON';
+      } else if (mode === 'dim') {
+        title.textContent = 'Cozy Vibes';
+        label.textContent = 'DIM';
+      } else {
+        title.textContent = 'Lights Off';
+        label.textContent = 'OFF';
+      }
+    }
+
+    function toggleModal(show) {
+      document.getElementById('modal').className = show ? 'modal-overlay active' : 'modal-overlay';
+      document.body.style.overflow = show ? 'hidden' : '';
+    }
+
+    function toggleFaq(index) {
+      const items = document.querySelectorAll('.faq-item');
+      items.forEach((item, i) => {
+        if (i === index) {
+          item.classList.toggle('open');
+        } else {
+          item.classList.remove('open');
+        }
+      });
+    }
+  </script>
+</body>
+</html>
